@@ -1,0 +1,359 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#111827">
+<title>Meu Controle Financeiro</title>
+<style>
+:root{--bg:#f3f5f9;--card:#fff;--ink:#172033;--muted:#687386;--blue:#4263eb;--green:#13865c;--red:#d94b57;--line:#e4e8ef}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px system-ui,Arial,sans-serif}
+header{background:#111827;color:white;padding:22px 16px}
+header h1{margin:0;font-size:24px}
+header p{color:#c4ccda;margin:5px 0}
+main{max-width:950px;margin:auto;padding:14px;display:grid;gap:14px}
+.panel,.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:15px}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+small,.muted{color:var(--muted)}
+.metric strong{display:block;font-size:22px;margin-top:5px;overflow-wrap:anywhere}
+.green{color:var(--green)}.red{color:var(--red)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}
+input,select,button{font:inherit;border-radius:9px;padding:11px}
+input,select{width:100%;border:1px solid #d8deea;background:white;color:#172033}
+button{border:0;font-weight:bold;cursor:pointer}
+.primary{background:var(--blue);color:white}
+.secondary{background:#edf0f6;color:#172033}
+.danger{background:#fff0f0;color:var(--red)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.tabs{display:flex;gap:7px;overflow:auto}
+.tabs button{white-space:nowrap;background:white;color:#172033;border:1px solid var(--line)}
+.tabs button.active{background:var(--blue);color:white}
+.hidden{display:none!important}
+h2{font-size:17px;margin:0 0 12px}
+.item{padding:12px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center}
+.item small{display:block}
+.progress{height:8px;background:#e4e8ef;border-radius:10px;overflow:hidden;margin:8px 0}
+.progress span{display:block;height:100%;background:var(--blue)}
+table{border-collapse:collapse;width:100%;min-width:500px}
+td,th{text-align:left;padding:9px;border-bottom:1px solid var(--line);font-size:12px}
+.tablewrap{overflow:auto}
+.notice{background:#eef2ff;padding:10px;border-radius:9px;color:#44506a;font-size:12px;margin-top:10px}
+.empty{padding:15px;text-align:center;color:var(--muted)}
+@media(max-width:650px){.grid{grid-template-columns:1fr}.fields{grid-template-columns:1fr 1fr}}
+@media(max-width:380px){.fields{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+<h1>Meu Financeiro</h1>
+<p>Ganhos, despesas, metas e custos do carro</p>
+</header>
+<main>
+<div class="cards">
+<div class="card metric"><small>Saldo do mês</small><strong id="balance">R$ 0,00</strong></div>
+<div class="card metric"><small>Entradas</small><strong id="income" class="green">R$ 0,00</strong></div>
+<div class="card metric"><small>Despesas</small><strong id="expense" class="red">R$ 0,00</strong></div>
+<div class="card metric"><small>Lucro das corridas</small><strong id="profit">R$ 0,00</strong></div>
+</div>
+
+<div class="item">
+<div><b>Período consultado</b><small>Escolha o mês</small></div>
+<input id="month" type="month" style="max-width:165px">
+</div>
+
+<nav class="tabs">
+<button class="active" data-tab="home">Início</button>
+<button data-tab="entries">Lançamentos</button>
+<button data-tab="goals">Metas e orçamento</button>
+<button data-tab="car">Meu carro</button>
+<button data-tab="reports">Relatórios</button>
+<button data-tab="backup">Backup</button>
+</nav>
+
+<section id="home" class="tab">
+<div class="grid">
+<div class="panel">
+<h2>Novo lançamento</h2>
+<form id="entryForm">
+<div class="fields">
+<div><label>Tipo</label><select id="type"><option value="income">Entrada</option><option value="expense">Despesa</option></select></div>
+<div><label>Valor (R$)</label><input id="amount" type="number" min=".01" step=".01" required></div>
+<div><label>Data</label><input id="date" type="date" required></div>
+<div><label>Classificação</label><select id="kind"><option>Variável</option><option>Fixa</option></select></div>
+<div><label>Categoria</label><select id="category"></select></div>
+<div><label>Descrição</label><input id="description" required placeholder="Ex.: mercado"></div>
+</div>
+<div class="actions"><button class="primary">Salvar lançamento</button></div>
+</form>
+</div>
+
+<div class="panel">
+<h2>Calcular lucro das corridas</h2>
+<form id="rideForm">
+<div class="fields">
+<div><label>Ganhos brutos (R$)</label><input id="gross" type="number" min="0" step=".01" required></div>
+<div><label>Distância (km)</label><input id="km" type="number" min="0" step=".1" required></div>
+<div><label>Consumo (km/L)</label><input id="consumption" type="number" min=".1" step=".1" value="12.5" required></div>
+<div><label>Gasolina (R$/L)</label><input id="gas" type="number" min="0" step=".01" required></div>
+</div>
+<div class="actions"><button class="primary">Calcular e registrar</button></div>
+</form>
+<div id="rideResult" class="notice">O cálculo desconta o combustível estimado.</div>
+</div>
+</div>
+<div class="panel">
+<h2>Despesas por categoria</h2>
+<div id="categorySummary"></div>
+</div>
+</section>
+
+<section id="entries" class="tab hidden">
+<div class="panel">
+<h2>Lançamentos do mês</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Tipo</th><th>Valor</th><th></th></tr></thead>
+<tbody id="rows"></tbody>
+</table></div>
+<div id="empty" class="empty">Nenhum lançamento neste mês.</div>
+<button id="csv" class="secondary">Exportar CSV</button>
+</div>
+<div class="panel">
+<h2>Despesas fixas recorrentes</h2>
+<form id="fixedForm">
+<div class="fields">
+<div><label>Nome da conta</label><input id="fixedName" required placeholder="Ex.: internet"></div>
+<div><label>Valor mensal</label><input id="fixedAmount" type="number" min=".01" step=".01" required></div>
+<div><label>Categoria</label><select id="fixedCategory"><option>Contas fixas</option><option>Casa</option><option>Seguro do carro</option><option>Financiamento</option><option>Outras despesas</option></select></div>
+<div><label>Dia de vencimento</label><input id="fixedDay" type="number" min="1" max="31" value="5" required></div>
+</div>
+<div class="actions"><button class="primary">Cadastrar conta</button></div>
+</form>
+<div id="fixedList"></div>
+</div>
+</section>
+
+<section id="goals" class="tab hidden">
+<div class="grid">
+<div class="panel">
+<h2>Orçamento mensal</h2>
+<form id="budgetForm">
+<label>Limite de despesas no mês (R$)</label>
+<input id="budgetAmount" type="number" min="0" step=".01" required>
+<div class="actions"><button class="primary">Salvar orçamento</button></div>
+</form>
+<div id="budgetStatus"></div>
+</div>
+<div class="panel">
+<h2>Meta de economia</h2>
+<form id="goalForm">
+<label>Nome da meta</label><input id="goalName" required placeholder="Ex.: reserva de emergência">
+<label style="margin-top:9px">Valor desejado (R$)</label><input id="goalTarget" type="number" min=".01" step=".01" required>
+<label style="margin-top:9px">Quanto já guardou (R$)</label><input id="goalSaved" type="number" min="0" step=".01" value="0" required>
+<div class="actions"><button class="primary">Criar meta</button></div>
+</form>
+<div id="goalList"></div>
+</div>
+</div>
+</section>
+
+<section id="car" class="tab hidden">
+<div class="panel">
+<h2>Custos do carro</h2>
+<form id="carForm">
+<div class="fields">
+<div><label>Data</label><input id="carDate" type="date" required></div>
+<div><label>Tipo de custo</label><select id="carType"><option>Combustível</option><option>Manutenção</option><option>Óleo e filtros</option><option>Pneus</option><option>Lavagem</option><option>Seguro</option><option>IPVA e licenciamento</option><option>Pedágio e estacionamento</option><option>Outros</option></select></div>
+<div><label>Valor (R$)</label><input id="carAmount" type="number" min=".01" step=".01" required></div>
+<div><label>Odômetro (km)</label><input id="odometer" type="number" min="0"></div>
+</div>
+<label style="margin-top:9px">Descrição</label><input id="carNote" placeholder="Ex.: troca de óleo">
+<div class="actions"><button class="primary">Registrar custo</button></div>
+</form>
+<h2 style="margin-top:20px">Lembrete de manutenção</h2>
+<form id="maintenanceForm">
+<label>Serviço</label><input id="maintenanceName" required placeholder="Ex.: revisar freios">
+<label style="margin-top:9px">Data prevista</label><input id="maintenanceDate" type="date">
+<div class="actions"><button class="secondary">Adicionar lembrete</button></div>
+</form>
+<div id="maintenanceList"></div>
+<h2 style="margin-top:20px">Custos registrados</h2>
+<div id="carList"></div>
+</div>
+</section>
+
+<section id="reports" class="tab hidden">
+<div class="panel">
+<h2>Relatórios</h2>
+<label>Período</label>
+<select id="reportMode"><option value="month">Mês selecionado</option><option value="week">Últimos 7 dias</option></select>
+<div id="reportSummary" style="margin-top:12px"></div>
+<div id="reportBars" style="margin-top:15px"></div>
+<button id="reportCsv" class="secondary" style="margin-top:12px">Exportar relatório CSV</button>
+</div>
+</section>
+
+<section id="backup" class="tab hidden">
+<div class="panel">
+<h2>Backup e recuperação</h2>
+<p class="muted">Baixe um arquivo de backup para guardar os dados ou restaurar em outro aparelho.</p>
+<div class="actions">
+<button id="backupBtn" class="primary">Baixar backup JSON</button>
+<label class="secondary" style="cursor:pointer">Restaurar backup<input id="restoreFile" type="file" accept=".json,application/json" style="display:none"></label>
+</div>
+<p class="notice">Os dados ficam neste navegador. Faça backup regularmente. Não há sincronização automática entre aparelhos.</p>
+<button id="clearBtn" class="danger">Apagar todos os dados</button>
+<div id="backupStatus" class="muted"></div>
+</div>
+</section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const today=()=>{let d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
+const monthNow=()=>today().slice(0,7);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
+const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let db={entries:[],fixed:[],goals:[],budgets:{},car:[],maintenance:[]};
+try{db={...db,...JSON.parse(localStorage.getItem('financeiroAppV2')||'{}')}}catch(e){}
+$('month').value=monthNow();
+['date','carDate'].forEach(id=>$(id).value=today());
+
+const categories={
+income:['Uber','99','Salário','Vendas','Outros ganhos','Ganhos de corridas'],
+expense:['Combustível','Manutenção do carro','Lavagem','Seguro do carro','Alimentação','Casa','Contas fixas','Lazer','Compras','Saúde','Financiamento','Outras despesas']
+};
+function updateCategories(){
+const list=categories[$('type').value];
+$('category').innerHTML=list.map(c=>`<option>${escapeHTML(c)}</option>`).join('');
+}
+$('type').addEventListener('change',updateCategories);updateCategories();
+
+function save(){localStorage.setItem('financeiroAppV2',JSON.stringify(db));render()}
+function currentEntries(){return db.entries.filter(e=>e.date.startsWith($('month').value))}
+function addEntry(e){db.entries.push({id:uid(),...e})}
+function deleteEntry(id){if(confirm('Excluir este lançamento?')){db.entries=db.entries.filter(e=>e.id!==id);save()}}
+window.deleteEntry=deleteEntry;
+
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{
+document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));
+document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('hidden',x.id!==b.dataset.tab));
+});
+
+$('entryForm').onsubmit=e=>{
+e.preventDefault();
+addEntry({type:$('type').value,amount:+$('amount').value,date:$('date').value,kind:$('kind').value,category:$('category').value,description:$('description').value.trim(),source:'manual'});
+$('amount').value='';$('description').value='';save();
+};
+
+$('rideForm').onsubmit=e=>{
+e.preventDefault();
+const gross=+$('gross').value,km=+$('km').value,cons=+$('consumption').value,gas=+$('gas').value;
+if(cons<=0)return;
+const fuel=km/cons*gas,date=$('date').value||today();
+addEntry({type:'income',amount:gross,date,kind:'Variável',category:'Ganhos de corridas',description:`Corridas (${km} km)`,source:'ride',work:true});
+addEntry({type:'expense',amount:fuel,date,kind:'Variável',category:'Combustível',description:`Combustível das corridas (${km} km)`,source:'ride',work:true});
+db.car.push({id:uid(),date,type:'Combustível',amount:fuel,odometer:'',note:`Combustível estimado das corridas (${km} km)`});
+$('rideResult').innerHTML=`Combustível: <b>${money(fuel)}</b><br>Lucro após combustível: <b class="${gross-fuel<0?'red':'green'}">${money(gross-fuel)}</b>`;
+$('month').value=date.slice(0,7);save();
+};
+
+$('month').onchange=render;
+
+$('fixedForm').onsubmit=e=>{
+e.preventDefault();
+db.fixed.push({id:uid(),name:$('fixedName').value,amount:+$('fixedAmount').value,category:$('fixedCategory').value,day:+$('fixedDay').value});
+e.target.reset();$('fixedDay').value=5;save();
+};
+
+window.launchFixed=id=>{
+const f=db.fixed.find(x=>x.id===id),month=$('month').value;
+if(db.entries.some(x=>x.fixedId===id&&x.date.startsWith(month))){alert('Essa conta já foi lançada neste mês.');return}
+const [y,m]=month.split('-').map(Number);
+const day=Math.min(f.day,new Date(y,m,0).getDate());
+addEntry({type:'expense',amount:f.amount,date:month+'-'+String(day).padStart(2,'0'),kind:'Fixa',category:f.category,description:f.name,source:'fixed',fixedId:id});
+save();
+};
+window.deleteFixed=id=>{if(confirm('Excluir esta conta recorrente?')){db.fixed=db.fixed.filter(x=>x.id!==id);save()}};
+
+$('budgetForm').onsubmit=e=>{e.preventDefault();db.budgets[$('month').value]=+$('budgetAmount').value;save()};
+$('goalForm').onsubmit=e=>{
+e.preventDefault();
+db.goals.push({id:uid(),name:$('goalName').value,target:+$('goalTarget').value,saved:+$('goalSaved').value});
+e.target.reset();$('goalSaved').value=0;save();
+};
+window.addGoal=id=>{
+const g=db.goals.find(x=>x.id===id),v=prompt('Quanto quer adicionar à meta? (R$)');
+if(v!==null&&Number(v)>0){g.saved+=Number(v);save()}
+};
+window.deleteGoal=id=>{if(confirm('Excluir esta meta?')){db.goals=db.goals.filter(x=>x.id!==id);save()}};
+
+$('carForm').onsubmit=e=>{
+e.preventDefault();
+const c={id:uid(),date:$('carDate').value,type:$('carType').value,amount:+$('carAmount').value,odometer:$('odometer').value,note:$('carNote').value};
+db.car.push(c);
+addEntry({type:'expense',amount:c.amount,date:c.date,kind:'Variável',category:c.type==='Combustível'?'Combustível':c.type==='Manutenção'?'Manutenção do carro':'Outros custos do carro',description:c.note||c.type,source:'car',carId:c.id});
+e.target.reset();$('carDate').value=today();save();
+};
+$('maintenanceForm').onsubmit=e=>{
+e.preventDefault();db.maintenance.push({id:uid(),name:$('maintenanceName').value,date:$('maintenanceDate').value,done:false});
+e.target.reset();save();
+};
+window.toggleMaintenance=id=>{const m=db.maintenance.find(x=>x.id===id);m.done=!m.done;save()};
+window.deleteMaintenance=id=>{db.maintenance=db.maintenance.filter(x=>x.id!==id);save()};
+window.deleteCar=id=>{
+if(confirm('Excluir custo do carro? O lançamento financeiro relacionado também será removido.')){
+db.car=db.car.filter(x=>x.id!==id);db.entries=db.entries.filter(x=>x.carId!==id);save();
+}};
+
+function render(){
+const list=currentEntries(),inc=list.filter(x=>x.type==='income').reduce((s,x)=>s+x.amount,0),exp=list.filter(x=>x.type==='expense').reduce((s,x)=>s+x.amount,0);
+const profit=list.filter(x=>x.source==='ride'&&x.type==='income').reduce((s,x)=>s+x.amount,0)-list.filter(x=>x.source==='ride'&&x.type==='expense').reduce((s,x)=>s+x.amount,0);
+$('balance').textContent=money(inc-exp);$('income').textContent=money(inc);$('expense').textContent=money(exp);$('profit').textContent=money(profit);
+$('rows').innerHTML=list.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<tr><td>${x.date.split('-').reverse().join('/')}</td><td>${escapeHTML(x.description)}</td><td>${escapeHTML(x.category)}</td><td>${x.type==='income'?'Entrada':'Despesa'}</td><td>${money(x.amount)}</td><td><button class="danger" onclick="deleteEntry('${x.id}')">Excluir</button></td></tr>`).join('');
+$('empty').style.display=list.length?'none':'block';
+const sums={};list.filter(x=>x.type==='expense').forEach(x=>sums[x.category]=(sums[x.category]||0)+x.amount);
+$('categorySummary').innerHTML=Object.entries(sums).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="item"><span>${escapeHTML(k)}</span><b>${money(v)}</b></div>`).join('')||'<div class="empty">Nenhuma despesa neste mês.</div>';
+
+$('fixedList').innerHTML=db.fixed.map(f=>`<div class="item"><div><b>${escapeHTML(f.name)}</b><small>${money(f.amount)} · dia ${f.day}</small></div><div><button class="secondary" onclick="launchFixed('${f.id}')">Lançar mês</button> <button class="danger" onclick="deleteFixed('${f.id}')">Excluir</button></div></div>`).join('')||'<div class="empty">Nenhuma conta recorrente.</div>';
+
+const limit=+(db.budgets[$('month').value]||0),pct=limit?Math.min(100,exp/limit*100):0;
+$('budgetAmount').value=limit||'';
+$('budgetStatus').innerHTML=limit?`<p>Gasto: <b>${money(exp)}</b> de ${money(limit)}</p><div class="progress"><span style="width:${pct}%;background:${exp>limit?'var(--red)':'var(--blue)'}"></span></div><p>${exp>limit?'Passou do limite em '+money(exp-limit):'Restam '+money(limit-exp)}</p>`:'<p class="muted">Defina um limite de gastos para o mês.</p>';
+
+$('goalList').innerHTML=db.goals.map(g=>{const p=Math.min(100,g.saved/g.target*100);return `<div class="item"><div style="flex:1"><b>${escapeHTML(g.name)}</b><small>${money(g.saved)} de ${money(g.target)}</small><div class="progress"><span style="width:${p}%"></span></div></div><div><button class="secondary" onclick="addGoal('${g.id}')">Adicionar</button> <button class="danger" onclick="deleteGoal('${g.id}')">Excluir</button></div></div>`}).join('')||'<div class="empty">Crie uma meta de economia.</div>';
+
+const car=db.car.filter(c=>c.date.startsWith($('month').value));
+$('carList').innerHTML=car.map(c=>`<div class="item"><div><b>${escapeHTML(c.type)} · ${money(c.amount)}</b><small>${c.date.split('-').reverse().join('/')}${c.odometer?' · '+c.odometer+' km':''} ${escapeHTML(c.note)}</small></div><button class="danger" onclick="deleteCar('${c.id}')">Excluir</button></div>`).join('')||'<div class="empty">Nenhum custo neste mês.</div>';
+$('maintenanceList').innerHTML=db.maintenance.map(m=>`<div class="item"><div><b>${escapeHTML(m.name)} ${m.done?'✓':''}</b><small>${m.date?'Previsto: '+m.date.split('-').reverse().join('/'):'Sem data'}</small></div><div><button class="secondary" onclick="toggleMaintenance('${m.id}')">${m.done?'Reabrir':'Concluir'}</button> <button class="danger" onclick="deleteMaintenance('${m.id}')">Excluir</button></div></div>`).join('')||'<div class="empty">Nenhum lembrete cadastrado.</div>';
+
+const mode=$('reportMode').value,month=$('month').value;
+let start,end;
+if(mode==='month'){start=month+'-01';const [y,m]=month.split('-').map(Number);end=new Date(y,m,0).toISOString().slice(0,10)}
+else{const d=new Date(today()+'T12:00:00');d.setDate(d.getDate()-6);start=d.toISOString().slice(0,10);end=today()}
+const re=db.entries.filter(x=>x.date>=start&&x.date<=end),ri=re.filter(x=>x.type==='income').reduce((s,x)=>s+x.amount,0),rx=re.filter(x=>x.type==='expense').reduce((s,x)=>s+x.amount,0);
+$('reportSummary').innerHTML=`<div class="item"><span>Período</span><b>${start.split('-').reverse().join('/')} a ${end.split('-').reverse().join('/')}</b></div><div class="item"><span>Entradas</span><b>${money(ri)}</b></div><div class="item"><span>Despesas</span><b>${money(rx)}</b></div><div class="item"><span>Resultado</span><b>${money(ri-rx)}</b></div>`;
+const bins=mode==='week'?Array.from({length:7},(_,i)=>{const d=new Date(today()+'T12:00:00');d.setDate(d.getDate()-6+i);const key=d.toISOString().slice(0,10),es=re.filter(x=>x.date===key);return {label:key.slice(8),inc:es.filter(x=>x.type==='income').reduce((s,x)=>s+x.amount,0),exp:es.filter(x=>x.type==='expense').reduce((s,x)=>s+x.amount,0)}}):Array.from({length:12},(_,i)=>{const key=month.slice(0,4)+'-'+String(i+1).padStart(2,'0'),es=db.entries.filter(x=>x.date.startsWith(key));return {label:String(i+1),inc:es.filter(x=>x.type==='income').reduce((s,x)=>s+x.amount,0),exp:es.filter(x=>x.type==='expense').reduce((s,x)=>s+x.amount,0)}});
+const max=Math.max(1,...bins.flatMap(b=>[b.inc,b.exp]));
+$('reportBars').innerHTML='<div style="display:flex;align-items:end;gap:5px;height:140px;border-bottom:1px solid #ddd">'+bins.map(b=>`<div title="Entradas ${money(b.inc)} / Despesas ${money(b.exp)}" style="flex:1;display:flex;align-items:end;justify-content:center;gap:2px;height:100%"><span style="width:40%;height:${Math.max(2,b.inc/max*95)}%;background:var(--green);border-radius:4px 4px 0 0"></span><span style="width:40%;height:${Math.max(2,b.exp/max*95)}%;background:var(--red);border-radius:4px 4px 0 0"></span></div>`).join('')+'</div><div style="display:flex;justify-content:space-around;color:var(--muted);font-size:10px;margin-top:4px">'+bins.map(b=>`<span>${b.label}</span>`).join('')+'</div>';
+}
+$('reportMode').onchange=render;
+
+function download(name,content,type){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+$('backupBtn').onclick=()=>download('backup-financeiro-'+today()+'.json',JSON.stringify({...db,version:2},null,2),'application/json');
+$('restoreFile').onchange=async e=>{
+const f=e.target.files[0];if(!f)return;
+try{const d=JSON.parse(await f.text());if(!Array.isArray(d.entries))throw Error('Arquivo de backup inválido.');if(!confirm('A restauração substituirá os dados atuais. Continuar?'))return;db={entries:d.entries,fixed:d.fixed||[],goals:d.goals||[],budgets:d.budgets||{},car:d.car||[],maintenance:d.maintenance||[]};save();$('backupStatus').textContent='Backup restaurado.'}catch(err){$('backupStatus').textContent='Erro: '+err.message}
+e.target.value='';
+};
+$('csv').onclick=()=>{const list=currentEntries(),rows=[['Data','Tipo','Descrição','Categoria','Valor'],...list.map(x=>[x.date,x.type,x.description,x.category,x.amount.toFixed(2).replace('.',',')])],csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');download('lancamentos-'+$('month').value+'.csv',csv,'text/csv;charset=utf-8')};
+$('reportCsv').onclick=()=>{const rows=[['Data','Tipo','Descrição','Categoria','Valor'],...db.entries.map(x=>[x.date,x.type,x.description,x.category,x.amount.toFixed(2).replace('.',',')])],csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');download('relatorio-financeiro.csv',csv,'text/csv;charset=utf-8')};
+$('clearBtn').onclick=()=>{if(confirm('Apagar todos os dados salvos neste aparelho?')){db={entries:[],fixed:[],goals:[],budgets:{},car:[],maintenance:[]};save();$('backupStatus').textContent='Dados apagados.'}};
+render();
+</script>
+</body>
+</html>
